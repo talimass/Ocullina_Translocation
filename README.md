@@ -15,7 +15,7 @@ We will assess the corals for gene expression, morphology, biochemical and physi
 
 ![alt text](Ranalysis/output/PHOTO-2024-02-12-15-35-08.jpg) 
 
-![alt text](/Users/talimass/Documents/Documents - MacBook Pro/GitHub/Ocullina_Translocation/Ranalysis/output/PHOTO-2024-06-26-09-07-12.jpg)
+![alt text](Ranalysis/output/PHOTO-2024-06-26-09-07-12.jpg)
 
 
 
