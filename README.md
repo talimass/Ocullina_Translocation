@@ -9,7 +9,7 @@ We conducted a reciprocal transplant study of *O. Patagonica*  in order to asses
 
 As we lost the control at the origin site, at the end of the experiment, we collected additional colonies from the origin collection site as a control.
 
-We recovered the corals during September-October 2024 
+We recovered the corals during October-December 2024 
 
 We will assess the corals for gene expression, morphology, biochemical and physiological endpoints. 
 
