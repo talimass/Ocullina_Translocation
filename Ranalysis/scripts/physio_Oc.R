@@ -13,6 +13,7 @@ library(effsize)
 
 setwd("/home/gospozha/haifa/O.patagonica/physio/")
 
+#### physiology ####
 # opening file, checking, replacing characters to vectors when needed
 physio <- read.csv('physiological_data.csv', stringsAsFactors = F)
 str(physio)
@@ -66,20 +67,11 @@ anova(model) # Depth is not significant factor
 
 growth <- ggplot(physio.growth, aes(y = (growrth_cm.2), x = Depth)) +
   geom_boxplot(outlier.size = 0.5, aes(fill = Depth), fatten = 0.5, alpha = 0.7, lwd = 0.4)+
-  geom_point() +
+  geom_jitter(width=0.2, size = 0.8) +
   labs(x = "Depth (m)", y= ~cm^2, title = "Coral growth rate")+
   mytheme
 
 growth
-
-# without 25 - still not significant
-shapiro.test(sqrt(physio.growth[physio.growth$Depth!=25,]$growrth_cm.2))
-leveneTest((sqrt(growrth_cm.2))~Depth,d=physio.growth[physio.growth$Depth!=25,])
-
-welch_res <- t.test(sqrt(growrth_cm.2) ~ Depth, 
-                    data = physio.growth[physio.growth$Depth %in% c(10, 45), ], 
-                    var.equal = FALSE)
-welch_res
 
 
 # Pairwise Hedges' g
@@ -99,7 +91,7 @@ growth_hedges <- ggplot(hedges_df, aes(x = Comparison, y = g)) +
   geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.15) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_text(aes(label = label), 
-            hjust = -0.1, vjust = -2, size = 3.2) +  
+            hjust = 0.7, vjust = -2, size = 3.2) +  
   labs(y = "Hedges' g (Effect Size, sqrt growth)", x = "Depth comparison", 
        title="Depth effect size on coral growth") +
   coord_flip() +
@@ -146,7 +138,7 @@ dunn.res
 
 protein <- ggplot(physio, aes(y = (protein_ug_ml), x = Depth)) +
   geom_boxplot(outlier.shape = NA, aes(fill = Depth), fatten = 0.5, alpha = 0.7, lwd = 0.4)+
-  geom_point() +
+  geom_jitter(width=0.2, size = 0.8) +
   labs(x = "Depth (m)", y= "Protein concentration (ug/ml)", title = "Coral host protein concentration")+
   mytheme +
   geom_text(data = letters.df, aes(x = Depth, y = Placement.Value, label = Letter),
@@ -169,7 +161,7 @@ protein_hedges <- ggplot(hedges_df, aes(x = Comparison, y = g)) +
   geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.15) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_text(aes(label = label), 
-            hjust = -0.1, vjust = -2, size = 3.2) +  
+            hjust = 0.7, vjust = -2, size = 3.2) +  
   labs(y = "Hedges' g (Effect Size, protein)", x = "Depth comparison", 
        title="Depth effect size on protein concentration") +
   coord_flip() +
@@ -195,22 +187,22 @@ anova(model) # Depth is not significant factor
 # double check with kruskal-wallis
 kruskal.test(zoox_cm.2 ~ Depth, data = physio)  # Depth is not significant factor 
 
+# posthoc: Dunn's Test with Bonferroni correction for p-values
+dunn.res <- dunnTest(zoox_cm.2 ~ Depth,
+                     data=physio,
+                     method="bonferroni")
+
 # boxplot 
 
 cellcm <- ggplot(physio, aes(y = (zoox_cm.2), x = Depth)) +
   geom_boxplot(outlier.size = 0.5, aes(fill = Depth), fatten = 0.5, alpha = 0.7, lwd = 0.4)+
-  geom_point() +
+  geom_jitter(width=0.2, size = 0.8) +
   labs(x = "Depth (m)", y= ~cells ~x~cm^-2, title = "Symbiont cell count per surface area")+
   mytheme 
 
 cellcm
 
-# without 25 - still not significant
 
-welch_res <- t.test(zoox_cm.2 ~ Depth, 
-                    data = physio[physio$Depth %in% c(10, 45), ], 
-                    var.equal = FALSE)
-welch_res
 
 # Pairwise Hedges' g
 hedges_df <- pairwise_hedges(physio, "zoox_cm.2", "Depth")
@@ -228,7 +220,7 @@ cellcm_hedges <- ggplot(hedges_df, aes(x = Comparison, y = g)) +
   geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.15) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_text(aes(label = label), 
-            hjust = -0.1, vjust = -2, size = 3.2) +  
+            hjust = 0.7, vjust = -2, size = 3.2) +  
   labs(y = "Hedges g (Effect Size, cell/cm^2)", x = "Depth comparison", 
        title="Depth effect size on symbiont cell count") +
   coord_flip()+
@@ -253,21 +245,15 @@ kruskal.test(chlorophyl_ug_algea ~ Depth, data = physio)
 
 chl <- ggplot(physio, aes(y = chlorophyl_ug_algea, x = Depth)) +
   geom_boxplot(outlier.size = 0.5, aes(fill = Depth), fatten = 0.5, alpha = 0.7, lwd = 0.4)+
-  geom_point() +
+  geom_jitter(width=0.2, size = 0.8) +
   labs(x = "Depth (m)", title="Chlorophyll per ug algae", y="Chlorophyll (~chlorophyll[a] ~x ~ug-1)") +
   mytheme 
  
 chl
 
 
-# without 25 - still not significant
-wilcox_res <- wilcox.test(zoox_cm.2~ Depth, 
-                          data = physio[physio$Depth %in% c(10, 45), ],
-                          exact = FALSE)
-wilcox_res
-
 # Pairwise Hedges' g
-hedges_df <- pairwise_hedges(physio, "zoox_cm.2", "Depth")
+hedges_df <- pairwise_hedges(physio, "chlorophyl_ug_algea", "Depth")
 hedges_df
 
 # a column with formatted text labels
@@ -282,7 +268,7 @@ chl_hedges <- ggplot(hedges_df, aes(x = Comparison, y = g)) +
   geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.15) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_text(aes(label = label), 
-            hjust = -0.1, vjust = -2, size = 3.2) +  
+            hjust = 0.7, vjust = -2, size = 3.2) +  
   labs(y = "Hedges' g (Effect Size, Chl/ug)", x = "Depth comparison", 
        title="Depth effect size on chlorophyll per ug algae") +
   coord_flip() +
@@ -301,3 +287,172 @@ ggsave("boxplots_combined.jpg", combined,  width = 8, height = 8)
 combined_hedges <- (growth_hedges + protein_hedges) / (cellcm_hedges + chl_hedges)
 combined_hedges
 ggsave("hedges_combined.jpg", combined_hedges,  width = 8, height = 8)
+
+
+#### photophysiology ####
+
+fire.data <- read.csv("Annotated_FIRe_data.csv")
+fire.data$depth = factor(fire.data$depth, levels = c("4", "10", "25", "4_October"))
+fire.data$Colony <- as.factor(fire.data$Colony)
+fire.data <- na.omit(fire.data)
+
+mycolors <- c('#C77CFF',  '#F8766D', '#00BA38',"#00BFC4"  )
+
+# reduce dataset 
+fire <- fire.data %>%
+  drop_na() %>%
+  group_by(depth, Colony) %>%
+  summarise(
+    `Fv.Fm` = mean(`fv_fm`, na.rm = TRUE),
+    Sigma = mean(Sigma, na.rm = TRUE),
+    `Pmax.e.s` = mean(`Pmax.e.s`, na.rm = TRUE),
+    p = mean(p, na.rm = TRUE),
+    .groups = "drop"  # optional: ungroups the result
+  )
+
+#### Functional absorption cross-section of PSII ####
+
+# checking for normality and homoscedasticity
+shapiro.test((fire$Sigma))  # data is normal
+leveneTest(Sigma~depth, d=fire) # no heteroscedasticity of variance
+
+ggplot(fire, aes(x = (Sigma), fill=depth, alpha=0.1)) +
+  geom_density() +
+  mytheme
+
+# plot doesn't look normal - using Kruscal test
+
+kruskal.test(Sigma ~ depth, data = fire) #  not significant
+
+# anova also not significant
+model <- lm(data = fire, Sigma ~ depth)
+summary(model)  
+plot(model) # Q-Q plot is ok
+anova(model) # Depth is not significant factor 
+
+# boxplot
+
+sigma <- ggplot(fire, aes(y = (Sigma), x = depth)) +
+  geom_boxplot(outlier.shape = NA, aes(fill = depth), fatten = 0.5, alpha = 0.7, lwd = 0.4)+
+  geom_jitter(width=0.2, size = 0.8) +
+  scale_fill_manual(values = mycolors )+
+  labs(title="Functional absorption cross-section of PSII", y= "σPSII’(A2)", x= "Depth (m)") +
+  mytheme
+
+sigma
+
+
+#### Quantum yield of photochemistry in PSII ####
+
+# checking for normality and homoscedasticity
+
+shapiro.test((fire$Fv.Fm))  # data is not normal (p.value < 0.05)
+leveneTest(Fv.Fm~depth, d=fire) # heteroscedasticity is ok
+
+# Kruskal-Wallis test for nonparametric data
+kruskal.test(Fv.Fm ~ depth, data = fire) #  significant
+
+
+# posthoc: Dunn's Test with Bonferroni correction for p-values
+dunn.res <- dunnTest(Fv.Fm ~ depth,
+                     data=fire,
+                     method="bonferroni")
+
+diff <- dunn.res$res$P.adj < 0.05
+Names <- gsub(" ", "", dunn.res$res$Comparison)
+names(diff) <- Names 
+# assigning letters to groups ("compact letter display")
+letters <- multcompLetters(diff)
+# creating df of letters and their positions to add them to the plot
+letters.df <- data.frame(letters$Letters)
+colnames(letters.df)[1] <- "Letter"
+letters.df$depth <- rownames(letters.df) 
+placement <- fire %>% 
+  group_by(depth) %>%
+  summarise(quantile(Fv.Fm, na.rm = TRUE)[4])
+colnames(placement)[2] <- "Placement.Value"
+letters.df <- left_join(letters.df, placement) 
+
+# boxplot with letters
+# groups with the same letter are the same
+# groups that are significantly different get different letters
+
+FvFm = ggplot(fire, aes(y = Fv.Fm, x = depth)) +
+  geom_boxplot(outlier.shape = NA, aes(fill = depth), fatten = 0.5, alpha = 0.7, lwd = 0.4)+
+  geom_jitter(width=0.2, size = 0.8) +
+  scale_fill_manual(values = mycolors )+
+  labs(title="Algal quantum yield of photochemistry in PSII", y="Fv’/Fm’") +
+  mytheme +
+  geom_text(data = letters.df, aes(x = depth, y = Placement.Value, label = Letter),
+            size = 3, color = "black", hjust = -0.5, vjust = -0.8, fontface = "italic")
+
+FvFm
+
+#### Maximum photosynthetic rate ####
+# checking for normality and homoscedasticity
+shapiro.test((fire$Pmax.e.s))  # data is not normal (p.value < 0.05)
+leveneTest(Pmax.e.s~depth, d=fire) # heteroscedasticity is ok
+
+kruskal.test(Pmax.e.s ~ depth, data = fire) #  significant
+
+# posthoc: Dunn's Test with Bonferroni correction for p-values
+dunn.res <- dunnTest(Pmax.e.s ~ depth,
+                     data=fire,
+                     method="bonferroni")
+
+diff <- dunn.res$res$P.adj < 0.05
+Names <- gsub(" ", "", dunn.res$res$Comparison)
+names(diff) <- Names 
+# assigning letters to groups ("compact letter display")
+letters <- multcompLetters(diff)
+# creating df of letters and their positions to add them to the plot
+letters.df <- data.frame(letters$Letters)
+colnames(letters.df)[1] <- "Letter"
+letters.df$depth <- rownames(letters.df) 
+placement <- fire %>% 
+  group_by(depth) %>%
+  summarise(quantile(Pmax.e.s, na.rm = TRUE)[4])
+colnames(placement)[2] <- "Placement.Value"
+letters.df <- left_join(letters.df, placement) 
+
+# boxplot with letters
+# groups with the same letter are the same
+# groups that are significantly different get different letters
+
+Pmax = ggplot(fire, aes(y = Pmax.e.s, x = depth)) +
+  geom_boxplot(outlier.shape = NA, aes(fill = depth), fatten = 0.5, alpha = 0.7, lwd = 0.4)+
+  geom_jitter(width=0.2, size = 0.8) +
+  scale_fill_manual(values = mycolors )+
+  labs(title="Maximum photosynthetic rate", y="Pmax (electron s-1 PSII-1)") +
+  mytheme +
+  geom_text(data = letters.df, aes(x = depth, y = Placement.Value, label = Letter),
+            size = 3, color = "black", hjust = -0.5, vjust = -0.8, fontface = "italic")
+
+Pmax
+
+
+#### connectivity parameter ####
+# checking for normality and homoscedasticity
+shapiro.test((fire$p))  # data is not normal (p.value < 0.05)
+leveneTest(p~depth, d=fire) # heteroscedasticity
+
+kruskal.test(p ~ depth, data = fire) # not significant
+
+p <- ggplot(fire, aes(y = (p), x = depth)) +
+  geom_boxplot(outlier.shape = NA, aes(fill = depth), fatten = 0.5, alpha = 0.7, lwd = 0.4)+
+  geom_jitter(width=0.2, size = 0.8) +
+  scale_fill_manual(values = mycolors )+
+  labs(title="Functional absorption cross-section of PSII", y= "σPSII’(A2)", x= "Depth (m)") +
+  mytheme
+
+p
+
+#### combined plots ####
+combined <- (FvFm + sigma) / (Pmax + p)
+combined
+ggsave("boxplots_fire_combined.jpg", combined,  width = 8, height = 8)
+
+combined <- (growth + protein) / (cellcm + chl) / (FvFm + sigma) / (Pmax + p) 
+combined
+ggsave("boxplots_all_combined.jpg", combined,  width = 8, height = 10)
+
