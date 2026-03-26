@@ -816,3 +816,27 @@ biomin_bar
 ggsave("biomin_somp.genes.pdf", biomin_bar, width = 6.5, height = 5)
 
 
+#### annotation with gene name ####
+deg_files <- list(
+  "25v5"  = "de_genes_25v5.csv",
+  "25v10" = "de_genes_25v10.csv",
+  "10v5"  = "de_genes_10v5.csv",
+  "30v1" = "de_genes_30v1.csv"
+)
+# annotation table
+annot <- read_tsv("gene_annotations_description.tsv", show_col_types = FALSE) %>%
+  select(gene_id, ipr, description) %>%
+  distinct(gene_id, .keep_all = TRUE)
+
+# loop
+for (nm in names(deg_files)) {
+  
+  file_path <- deg_files[[nm]]
+  
+  deg_df <- read_csv(file_path, show_col_types = FALSE)
+  
+  deg_annot <- deg_df %>%
+    left_join(annot, by = "gene_id")
+  
+  write_csv(deg_annot, paste0("de_genes_", nm, "_annotated.csv"))
+}
