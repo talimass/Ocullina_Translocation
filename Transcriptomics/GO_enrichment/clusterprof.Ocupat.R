@@ -557,3 +557,238 @@ p_heatmap <- ggplot(heatmap_df_top,
   )
 
 ggsave("goslim_heatmap_summary.pdf", p_heatmap, width = 6.5, height = 5)
+
+
+#### WGCNA Modules ####
+
+setwd("/home/gospozha/haifa/hiba/op_align_new/clusterprofiler/")
+
+term2gene <- read_tsv("term2gene.tsv")
+
+term2name <- read_tsv("term2name_GO.tsv")
+
+all_go_terms <- keys(GO.db)
+term2name <- term2name %>%
+  filter(term %in% all_go_terms)
+
+term2gene <- term2gene %>%
+  filter(term %in% term2name$term)
+
+setwd("/home/gospozha/haifa/hiba/op_align_new/wgcna")
+
+### more strict filtering - hub genes.
+# probably need to match to gene name
+# Read your data
+# Get module name from moduleColor, e.g. "MEblack" -> "black"
+# Create the correct p-value column name for each gene
+# Now use rowwise() to pull out the correct pval for each gene
+cluster.wgcna <- read.csv("geneInfo.14.70.csv", header = TRUE, row.names = 1)
+
+cluster.wgcna$module <- gsub("^ME", "", cluster.wgcna$moduleColor)
+cluster.wgcna$pval_col <- paste0("p.MM.", cluster.wgcna$module)
+cluster.wgcna$mm_col   <- paste0("MM.", cluster.wgcna$module)
+
+# Extract each gene's own module MM and p-value
+cluster.wgcna$module_pval <- mapply(
+  function(i, col) as.numeric(cluster.wgcna[i, col]),
+  seq_len(nrow(cluster.wgcna)),
+  cluster.wgcna$pval_col
+)
+
+cluster.wgcna$module_mm <- mapply(
+  function(i, col) as.numeric(cluster.wgcna[i, col]),
+  seq_len(nrow(cluster.wgcna)),
+  cluster.wgcna$mm_col
+)
+
+# Keep genes strongly assigned to their own module
+signif_genes <- cluster.wgcna %>%
+  filter(module_pval < 0.05, abs(module_mm) > 0.8)
+
+# Optional: also require significant GS in at least one trait
+traits <- c("5", "10", "25")
+
+gs_filter <- map2_chr(
+  traits,
+  paste0("p.GS.", traits),
+  ~ paste0("(abs(GS.", .x, ") > 0.2 & ", .y, " < 0.05)")
+) %>%
+  paste(collapse = " | ")
+
+signif_genes_gs <- signif_genes %>%
+  filter(!!parse_expr(gs_filter))
+
+clustered_signif_genes <- signif_genes_gs %>%
+  tibble::rownames_to_column(var = "gene_id") %>%
+  group_by(moduleColor) %>%
+  summarise(genes = list(gene_id), .groups = "drop")
+
+### less strixt filtering - for clusterProfiler
+# Import the table and bring gene IDs back as a column
+gene_table <- read.csv("geneInfo.14.70.csv", header = TRUE, row.names = 1) %>%
+  rownames_to_column(var = "gene_id")
+
+# Check module names
+table(gene_table$moduleColor)
+gene_table <- gene_table %>%
+  mutate(module = gsub("^ME", "", moduleColor))
+gene_table$mm_col <- paste0("MM.", gene_table$module)
+
+gene_table$module_mm <- mapply(
+  function(i, col) as.numeric(gene_table[i, col]),
+  seq_len(nrow(gene_table)),
+  gene_table$mm_col
+)
+gene_table$pmm_col <- paste0("p.MM.", gene_table$module)
+
+gene_table$module_pval <- mapply(
+  function(i, col) as.numeric(gene_table[i, col]),
+  seq_len(nrow(gene_table)),
+  gene_table$pmm_col
+)
+
+module_genes <- gene_table %>%
+  filter(moduleColor != "MEgrey") %>%
+  filter(abs(module_mm) > 0.7) %>%
+  group_by(moduleColor) %>%
+  summarise(
+    genes = list(gene_id),
+    n_genes = n(),
+    .groups = "drop"
+  )
+
+gene_universe <- gene_table$gene_id
+length(gene_universe)
+
+module_enrichment <- module_genes %>%
+  mutate(
+    enrich_res = map(
+      genes,
+      ~ enricher(
+        gene = .x,
+        universe = gene_universe,
+        TERM2GENE = term2gene,
+        TERM2NAME = term2name,
+        pvalueCutoff = 0.05,
+        pAdjustMethod = "fdr",
+        qvalueCutoff = 0.2
+      )
+    )
+  )
+
+module_enrichment_results <- module_enrichment %>%
+  mutate(enrich_df = map(enrich_res, ~ as.data.frame(.x))) %>%
+  dplyr::select(moduleColor, enrich_df) %>%
+  tidyr::unnest(enrich_df)
+
+write.csv(module_enrichment_results, "module_enrichment_results.csv", row.names = FALSE)
+# black, greenyellow, blue, yellow
+
+#### go slim on wgcna ####
+# 1. Load GO ontology + GO slim
+go <- get_ontology("http://purl.obolibrary.org/obo/go.obo",
+                   extract_tags = "everything")
+
+goslim <- get_ontology("http://current.geneontology.org/ontology/subsets/goslim_generic.obo",
+                       extract_tags = "everything")
+
+# 2. Function to map GO IDs to GO slim
+map_go_to_goslim <- function(go_ids, go, goslim) {
+  slim_map <- lapply(go_ids, function(go_id) {
+    if (is.na(go_id) || !go_id %in% names(go$ancestors)) return(NA_character_)
+    
+    ancestors <- unique(c(go_id, go$ancestors[[go_id]]))  # include self
+    slim_hits <- intersect(ancestors, names(goslim$name))
+    
+    if (length(slim_hits) == 0) return(NA_character_)
+    
+    paste(slim_hits, collapse = ";")
+  })
+  
+  unlist(slim_map)
+}
+
+# 3. Function to convert GO slim IDs to names
+map_goslim_names <- function(goslim_ids, goslim) {
+  sapply(goslim_ids, function(x) {
+    if (is.na(x) || x == "") return(NA_character_)
+    ids <- strsplit(x, ";")[[1]]
+    ids <- ids[ids %in% names(goslim$name)]
+    if (length(ids) == 0) return(NA_character_)
+    paste(goslim$name[ids], collapse = ";")
+  })
+}
+
+# 4. Read WGCNA enrichment results
+enrich_results <- read_csv("module_enrichment_results.csv", show_col_types = FALSE)
+
+# 5. Keep only the modules you want
+modules_to_keep <- c("MEblack", "MEgreenyellow", "MEblue", "MEyellow")
+
+enrich_results_sub <- enrich_results %>%
+  filter(moduleColor %in% modules_to_keep)
+
+# optional: keep only significant terms again, just in case
+enrich_results_sub <- enrich_results_sub %>%
+  filter(!is.na(p.adjust), p.adjust < 0.05)
+
+# 6. Add GO slim mapping
+enrich_results_sub <- enrich_results_sub %>%
+  mutate(
+    GOSLIM_ID = map_go_to_goslim(ID, go, goslim),
+    GOSLIM_Name = map_goslim_names(GOSLIM_ID, goslim)
+  )
+
+# 7. Save combined file
+write_csv(enrich_results_sub, "module_enrichment_results_goslim.csv")
+
+# 6. Prepare combined table for plotting
+
+plot_df <- enrich_results_sub %>%
+  filter(!is.na(GOSLIM_Name), GOSLIM_Name != "") %>%
+  separate_rows(GOSLIM_ID, GOSLIM_Name, sep = ";") %>%
+  filter(!is.na(GOSLIM_Name), GOSLIM_Name != "")
+
+# summarise per contrast x goslim
+heatmap_df <- plot_df %>%
+  group_by(moduleColor, GOSLIM_Name) %>%
+  summarise(
+    n_terms = n(),
+    .groups = "drop"
+  )
+
+# optional: keep only the most frequent GO slim terms
+top_goslim <- heatmap_df %>%
+  group_by(GOSLIM_Name) %>%
+  summarise(total_terms = sum(n_terms, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(total_terms)) %>%
+  slice_head(n = 30) %>%
+  pull(GOSLIM_Name)
+
+heatmap_df_top <- heatmap_df %>%
+  filter(GOSLIM_Name %in% top_goslim)
+
+# order rows by total number of terms
+goslim_order <- heatmap_df_top %>%
+  group_by(GOSLIM_Name) %>%
+  summarise(total_terms = sum(n_terms), .groups = "drop") %>%
+  arrange(total_terms) %>%
+  pull(GOSLIM_Name)
+
+heatmap_df_top$GOSLIM_Name <- factor(
+  heatmap_df_top$GOSLIM_Name,
+  levels = goslim_order
+)
+
+# heatmap
+p_heatmap <- ggplot(heatmap_df_top,
+                    aes(x = moduleColor, y = GOSLIM_Name, fill = n_terms)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(name = "Number of GO terms") +
+  theme_minimal(base_size = 10) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title = element_blank()
+  )
+
+ggsave("module.goslim_heatmap_summary.pdf", p_heatmap, width = 6.5, height = 5)
