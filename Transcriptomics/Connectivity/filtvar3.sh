@@ -80,11 +80,8 @@ done < <(head -n 1 "${OUT}_INDELs_VarScores_filterPASSED_DPfilterNoCall.DP.table
 
 ## ## Check number of non-missing genotype DP entries after 2nd-pass filtering
 for F in *.GT.DP.txt; do awk 'NR>1' $F; done | wc -l
-# 430694419
 awk 'NR>1' "${OUT}_SNPs_VarScores_filterPASSED_DPfilterNoCall.GT.DP.txt" | wc -l
-# 69361
 awk 'NR>1' "${OUT}_INDELs_VarScores_filterPASSED_DPfilterNoCall.GT.DP.txt" | wc -l
-# 4995
 
 
 # Make diagnostic plots with plot.dp.scores.sh script (Rscript plot_DP_scores.R "${OUT}.DP.afterFiltering")
