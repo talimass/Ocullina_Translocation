@@ -4,16 +4,9 @@ library(ggplot2)
 library(stringr)
 
 
-
-#save.image(file='kinship5.RData')
-#load('kinship.RData')
-#### all clones/no relatives ####
 setwd("/home/gospozha/haifa/hiba/op_align_new/snp/pruned")
 # Read KING table
 king <- read.csv("idb.kin0", stringsAsFactors=FALSE, sep = "\t")
-#king <- read.csv("idb_0.7.kin0", stringsAsFactors=FALSE, sep = "\t") # all
-#king <- read.csv("./new/idb_w_rel.kin0", stringsAsFactors=FALSE, sep = "\t") # no_relatives
-#king <- read.csv("idb.kin0.no_known_clones.tsv", stringsAsFactors=FALSE, sep = "\t") # no_relatives
 
 
 # Define thresholds
@@ -70,58 +63,5 @@ kinship <- ggraph(g, layout="fr") +
 kinship
 #saveRDS(kinship, "fig_kinship.rds")
 ggsave("kinship.jpg", kinship, width = 10, height = 10)
-
-#### removing artificial clones ####
-
-library(dplyr)
-library(readr)
-library(purrr)
-
-# paths
-meta_path <- "../Metadata.csv"
-king_path <- "idb_0.7.kin0"
-
-# 1) read metadata and clean sample IDs to match KING (metadata has "./" prefix)
-meta <- read_csv(meta_path, show_col_types = FALSE) %>%
-  mutate(id_clean = sub("^\\./", "", id)) %>%
-  select(id_clean, origin)
-
-# 2) build a set of "clone-pair keys" from metadata (all within-group pairs)
-clone_pairs <- meta %>%
-  filter(!is.na(origin)) %>%
-  group_by(origin) %>%
-  summarise(ids = list(unique(id_clean)), .groups = "drop") %>%
-  mutate(pair_keys = map(ids, \(v) {
-    v <- sort(v)
-    if (length(v) < 2) return(character(0))
-    cmb <- combn(v, 2)
-    paste(cmb[1, ], cmb[2, ], sep = "__")
-  })) %>%
-  pull(pair_keys) %>%
-  unlist(use.names = FALSE) %>%
-  unique()
-
-# 3) read KING table (first header is "#FID1", keep it)
-king <- read_delim(king_path, delim = "\t", show_col_types = FALSE, comment = "") %>%
-  rename_with(~ sub("^#", "", .x))  # turns "#FID1" -> "FID1"
-
-# 4) make an order-invariant key for each pair in KING and remove clone pairs
-king_filtered <- king %>%
-  mutate(
-    a = pmin(ID1, ID2),
-    b = pmax(ID1, ID2),
-    pair_key = paste(a, b, sep = "__")
-  ) %>%
-  filter(!pair_key %in% clone_pairs) %>%
-  select(-a, -b, -pair_key)
-
-# 5) optional: write out
-write_tsv(king_filtered, "idb_0.7.kin0.no_known_clones.tsv")
-
-# quick sanity check
-cat("Original rows:", nrow(king), "\n")
-cat("Filtered rows:", nrow(king_filtered), "\n")
-cat("Removed rows:", nrow(king) - nrow(king_filtered), "\n")
-
 
 
