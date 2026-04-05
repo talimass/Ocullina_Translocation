@@ -71,13 +71,9 @@ gatk --java-options "-Xmx64G -XX:ParallelGCThreads=8" \
 
 # Check the number of PASSED after the first filtering
 zcat "${OUT}.SNPs.vcf.gz" | grep -v '^#' | wc -l
-# 4142116
 zcat "${OUT}_SNPs_VarScores_filter.qd.vcf.gz" | grep 'PASS' | wc -l
-# 2791170
 zcat "${OUT}.INDELs.vcf.gz" | grep -v '^#' | wc -l
-# 838000
 zcat "${OUT}_INDELs_VarScores_filter.qd.vcf.gz" | grep 'PASS' | wc -l
-# 622066
 
 
 # Extract only variants that PASSED filtering
