@@ -36,9 +36,9 @@ gatk --java-options "-Xmx64G -XX:ParallelGCThreads=8" SelectVariants \
      -R ${REF} -V  cohort_genotypes.vcf.gz -O ${OUT}.SNPs.vcf.gz \
       -select-type SNP 1> ${OUT}_SNPs.vcf.gz.log 2>&1
 
-#gatk --java-options "-Xmx64G -XX:ParallelGCThreads=8" SelectVariants \
-#     -R ${REF} -V  cohort_genotypes.vcf.gz -O ${OUT}.INDELs.vcf.gz \
-#     --select-type-to-include INDEL 1> ${OUT}_INDELs.vcf.gz.log 2>&1
+gatk --java-options "-Xmx64G -XX:ParallelGCThreads=8" SelectVariants \
+     -R ${REF} -V  cohort_genotypes.vcf.gz -O ${OUT}.INDELs.vcf.gz \
+     --select-type-to-include INDEL 1> ${OUT}_INDELs.vcf.gz.log 2>&1
 
 gatk --java-options "-Xmx64G -XX:ParallelGCThreads=8" VariantsToTable\
     --variant ${OUT}.SNPs.vcf.gz \
@@ -46,10 +46,10 @@ gatk --java-options "-Xmx64G -XX:ParallelGCThreads=8" VariantsToTable\
     -F CHROM -F POS -F QUAL -F QD -F DP -F MQ -F FS -F SOR -F MQRankSum \
     -F ReadPosRankSum 1> ${OUT}_SNPs.table.log 2>&1
 
-#gatk --java-options "-Xmx64G -XX:ParallelGCThreads=8" VariantsToTable \
-#     --variant ${OUT}.INDELs.vcf.gz \
-#     --output ${OUT}_INDELs.table -F CHROM -F POS -F QUAL -F QD -F DP \
-#     -F MQ -F FS -F SOR -F MQRankSum -F ReadPosRankSum \
-#     1> ${OUT}_INDELs.table.log 2>&1\
+gatk --java-options "-Xmx64G -XX:ParallelGCThreads=8" VariantsToTable \
+     --variant ${OUT}.INDELs.vcf.gz \
+     --output ${OUT}_INDELs.table -F CHROM -F POS -F QUAL -F QD -F DP \
+     -F MQ -F FS -F SOR -F MQRankSum -F ReadPosRankSum \
+     1> ${OUT}_INDELs.table.log 2>&1\
 
 # plot diagnostics plots with these results - script diagnostics.R 
