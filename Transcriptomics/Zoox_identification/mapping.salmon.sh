@@ -26,8 +26,10 @@ echo "================================"
 source /lustre1/home/mass/eskalon/miniconda/bin/activate salmon
 ### Below you can enter your program job command ###
 
-#salmon index -t symbionts_combined_prot.fa -i transc_index -k 31
+# indexing
+salmon index -t symbionts_combined_prot.fa -i transc_index -k 31
 
+# mapping
 for f in raw/*mate1; do mv "$f" "$f.fastq"; done
 
 for R1 in raw/*mate1.fastq; do
