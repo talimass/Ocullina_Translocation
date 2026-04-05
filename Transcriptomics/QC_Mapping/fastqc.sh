@@ -30,10 +30,10 @@ mkdir -p fastqc_after
 
 ### Below you can enter your program job command ###
 
-#fastqc --noextract -o ./fastqc_before -t 64 ../raw/Oculina_reads_03_2026/*R2*.fastq.gz
+fastqc --noextract -o ./fastqc_before -t 64 ../raw/Oculina_reads_03_2026/*R2*.fastq.gz
 fastqc --noextract -o ./ribo -t 16 ./ribo/*
 
 source /lustre1/home/mass/eskalon/miniconda/bin/activate multiqc
-#multiqc --outdir fastqc_before fastqc_before/ --filename fastqc.before.html
-#fastqc --noextract -o ./fastqc_after -t 4 trim/*.fastq.gz
+multiqc --outdir fastqc_before fastqc_before/ --filename fastqc.before.html
+fastqc --noextract -o ./fastqc_after -t 4 trim/*.fastq.gz
 multiqc --outdir ribo ribo/ --filename ribo.html
