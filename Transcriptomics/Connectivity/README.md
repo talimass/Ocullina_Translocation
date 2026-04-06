@@ -75,5 +75,5 @@ Calculating allele frequencies... done.
 22129 variants remaining after main filters.
 ```
 ### Fst analysis
-[Fst.R](https://github.com/talimass/Ocullina_Translocation/blob/main/Transcriptomics/Connectivity/Fst.R) runs Fst analysis between both different depths and sites of the samples, visualises the results via heatmap and a PCA plot, runs heterozygosity analysis - everything for both datasets (18 and 14 samples). Metadata can be found [here](https://github.com/talimass/Ocullina_Translocation/blob/main/Transcriptomics/Connectivity/pop.csv).
+[Fst.R](https://github.com/talimass/Ocullina_Translocation/blob/main/Transcriptomics/Connectivity/Fst.R) runs Fst analysis, visualises the results via heatmap and a PCA plot. Metadata can be found [here](https://github.com/talimass/Ocullina_Translocation/blob/main/Transcriptomics/Connectivity/pop.csv).
 
